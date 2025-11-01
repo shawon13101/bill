@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shawon Enterprise</title>
+  <style>
+    :root{ --accent:#0b5ed7; --muted:#6b7280; --panel:#ffffff; font-family:Inter, system-ui, Arial; }
+    body{margin:0;background:#f3f6fb;padding:18px;color:#0b1a2b}
+    .app{max-width:1000px;margin:0 auto;background:var(--panel);border-radius:10px;padding:18px;box-shadow:0 8px 30px rgba(11,30,60,0.08)}
+    header{text-align:center;margin-bottom:12px}
+    header h1{font-size:22px;margin:0;font-weight:700}
+    .controls{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:8px}
+    input,select,button,textarea{font-family:inherit}
+    .grid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+    .card{background:#f8fafc;border-radius:8px;padding:12px}
+    label{font-size:12px;color:var(--muted)}
+    input[type=date],input[type=text],input[type=tel],select,input[type=number],textarea{padding:8px;border-radius:6px;border:1px solid #e6edf6;width:100%;box-sizing:border-box}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:8px;border-bottom:1px solid #e9eef6;font-size:14px;text-align:left}
+    th{background:#fbfdff}
+    .table-input{width:100%;padding:6px;border-radius:4px;border:1px solid #e6edf6;box-sizing:border-box}
+    .product-cell{width:30%}.price-cell{width:15%}.rate-cell{width:15%}.qty-cell{width:15%}.total-cell{width:15%}.action-cell{width:10%}
+    .btn{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    .btn.secondary{background:#e6edf6;color:var(--accent)}
+    .totals{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+    .totals .line{display:flex;justify-content:space-between;padding:6px 8px;background:#fff;border-radius:6px}
+    .deposit-container{display:flex;gap:8px;align-items:center;margin-top:12px}
+    .deposit-container textarea{flex:1;padding:8px;border-radius:6px;border:1px solid #e6edf6;font-family:inherit;resize:vertical;min-height:40px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}table{display:block;overflow-x:auto}th,td{padding:6px 4px;font-size:12px}.btn{padding:6px 8px;font-size:12px}}
+    @media(max-width:600px){.deposit-container{flex-direction:column}.controls{flex-wrap:wrap}}
+    @media print {
+      body * {visibility:hidden;}
+      .app, .app * {visibility:visible;}
+      #printBtn,#saveLocalBtn,#loadLocalBtn,#resetBtn,.removeRow,#addItemBtn,.bill-edit-controls{display:none!important;}
+      canvas{display:none!important;}
+      body{background:white;}
+      #billIdInput { display:none !important; }
+      #billIdPrint { display:block !important; font-weight:700; }
+    }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    #billIdPrint { display:none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Shawon Enterprise</h1>
+      <div class="controls">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="bill-edit-controls">Bill ID:</div>
+          <input type="number" id="billIdInput" class="bill-edit-controls" style="width:120px;text-align:center;border:1px solid #ccc;border-radius:4px;padding:6px;" />
+          <div id="billIdPrint" style="width:120px;text-align:center"></div>
+        </div>
+        <button class="btn" id="printBtn">Print / Save</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:180px">
+              <label>Date</label>
+              <input type="date" id="invoiceDate" />
+              <div id="formattedDateDisplay" style="margin-top:6px;font-size:13px;color:#555;"></div>
+            </div>
+            <div style="width:160px">
+              <label>Customer Mobile</label>
+              <input type="tel" id="customerMobile" placeholder="01XXXXXXXXX" />
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <label>Customer Name</label>
+            <input type="text" id="customerName" placeholder="Customer full name" />
+          </div>
+          <div style="margin-top:10px">
+            <label>Customer Address</label>
+            <input type="text" id="customerAddress" placeholder="Address" />
+          </div>
+
+          <h3 style="margin:12px 0 6px 0">Items</h3>
+          <table id="itemsTable">
+            <thead>
+              <tr>
+                <th class="product-cell">Product</th>
+                <th class="price-cell">Price per tn</th>
+                <th class="rate-cell">Rate</th>
+                <th class="qty-cell">Qty</th>
+                <th class="total-cell">Total</th>
+                <th class="action-cell"></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="addItemBtn">Add more item</button>
+            <button class="btn secondary" id="resetBtn">Reset</button>
+          </div>
+
+        </div>
+
+        <div style="margin-top:12px" class="card">
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;text-align:center"><strong>Seller Signature:-</strong></div>
+            <div style="flex:1;text-align:center"><strong>Buyer Signature:-</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3 style="margin:0 0 8px 0">Summary</h3>
+          <div class="totals">
+            <div class="line">
+              <div>Sub total/Due:- </div>
+              <div id="subTotal">0.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      function $(id){return document.getElementById(id)}
+      const PRODUCTS = [
+        'Meghna Regin','CGPC Regin','Sg-5 Regin','Fresh Calcium','Tkn-1',
+        'Picmic','Thana-2','Stearic','Kizar','Moom','Baluchor','Kn-500',
+        'Titi','ACR','CPE','Turoushko','Hurstalec','Labor','Other','Amount Paid','Due Amount'
+      ];
+
+      function getBillCounter(){
+        const stored = localStorage.getItem('shawom_bill_counter');
+        const n = parseInt(stored, 10);
+        if (!isFinite(n) || n < 1) return 1;
+        return n;
+      }
+      function setBillCounter(n){
+        const v = Math.max(1, Math.floor(Number(n) || 1));
+        localStorage.setItem('shawom_bill_counter', String(v));
+      }
+      function incrementBillCounter(){
+        const n = getBillCounter() + 1;
+        setBillCounter(n);
+        return n;
+      }
+      function formatBillId(counter){
+        return String(counter).padStart(7,'0');
+      }
+
+      function formatIndianNumber(num){
+        const [intPart, decPart] = Number(num || 0).toFixed(2).split(".");
+        const last3 = intPart.slice(-3);
+        const other = intPart.slice(0, -3);
+        const formatted = other.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+        return (other ? formatted + "," : "") + last3 + "." + decPart;
+      }
+
+      function createItemRow(data={product:'Meghna Regin',other:'',pricePerTn:'',rate:'',qty:'',total:''}){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="product-cell">
+            <select class="productSelect table-input"></select>
+            <input class="otherProduct table-input" style="display:none;margin-top:6px" placeholder="Enter product name" />
+          </td>
+          <td class="price-cell"><input type="number" class="pricePerTn table-input" step="0.01" min="0" /></td>
+          <td class="rate-cell"><input type="number" class="rate table-input" step="0.01" min="0" /></td>
+          <td class="qty-cell"><input type="number" class="qty table-input" step="0.01" min="0" /></td>
+          <td class="total-cell"><input type="number" class="totalPrice table-input" step="0.01" min="0" /></td>
+          <td class="action-cell"><button class="btn secondary removeRow">-</button></td>`;
+        const sel = tr.querySelector('.productSelect');
+        PRODUCTS.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; sel.appendChild(o); });
+        sel.value = PRODUCTS.includes(data.product) ? data.product : 'Other';
+
+        const otherInput = tr.querySelector('.otherProduct');
+        if (sel.value === 'Other'){ otherInput.style.display = 'block'; if (data.other) otherInput.value = data.other; }
+
+        tr.querySelector('.pricePerTn').value = data.pricePerTn || '';
+        tr.querySelector('.rate').value = data.rate || '';
+        tr.querySelector('.qty').value = data.qty || '';
+        tr.querySelector('.totalPrice').value = data.total || '';
+
+        sel.addEventListener('change', () => {
+          if (sel.value === 'Other'){ otherInput.style.display = 'block'; }
+          else { otherInput.style.display = 'none'; otherInput.value = ''; }
+          updateAll();
+        });
+
+        const price = tr.querySelector('.pricePerTn');
+        const rate = tr.querySelector('.rate');
+        const qty = tr.querySelector('.qty');
+        const total = tr.querySelector('.totalPrice');
+        let manualRate = false;
+        let manualTotal = false;
+
+        rate.addEventListener('input', () => { manualRate = true; updateRow(); });
+        price.addEventListener('input', () => { if(!manualRate){ rate.value = (+price.value/40).toFixed(2); } updateRow(); });
+        qty.addEventListener('input', () => { manualTotal = false; updateRow(); });
+        total.addEventListener('input', () => { manualTotal = true; updateRow(); });
+
+        function updateRow(){
+          const r = parseFloat(rate.value || 0);
+          const q = parseFloat(qty.value || 0);
+          if(!manualTotal) total.value = (r*q || 0).toFixed(2);
+          updateAll();
+        }
+
+        tr.querySelector('.removeRow').addEventListener('click', () => { tr.remove(); updateAll(); });
+        return tr;
+      }
+
+      function addNewItem(data){
+        $('itemsBody').appendChild(createItemRow(data));
+      }
+
+      function updateAll(){
+        const rows = [...document.querySelectorAll('#itemsBody tr')];
+        let subtotal = 0;
+        rows.forEach(r => {
+          const total = parseFloat(r.querySelector('.totalPrice').value || 0);
+          subtotal += isFinite(total) ? total : 0;
+        });
+        $('subTotal').textContent = formatIndianNumber(subtotal);
+      }
+
+      function resetForm(){
+        setTodayDate();
+        $('customerMobile').value = '';
+        $('customerName').value = '';
+        $('customerAddress').value = '';
+        const itemsBody = $('itemsBody');
+        while(itemsBody.firstChild){ itemsBody.removeChild(itemsBody.firstChild); }
+        addNewItem();
+        updateAll();
+      }
+
+      // === NEW FUNCTION: sets today's date and updates formatted DD/MM/YYYY display ===
+      function setTodayDate(){
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        $('invoiceDate').valueAsDate = new Date(`${yyyy}-${mm}-${dd}`);
+        updateDateDisplay();
+      }
+
+      function updateDateDisplay(){
+        const dateInput = $('invoiceDate');
+        const display = $('formattedDateDisplay');
+        const val = dateInput.value;
+        if (val) {
+          const [y, m, d] = val.split('-');
+          display.textContent = `Selected date: ${d}/${m}/${y}`;
+        } else {
+          display.textContent = '';
+        }
+      }
+
+      window.addEventListener('load', () => {
+        setTodayDate();
+        $('invoiceDate').addEventListener('input', updateDateDisplay);
+
+        if(!localStorage.getItem('shawom_bill_counter')){ localStorage.setItem('shawom_bill_counter','1'); }
+        const counter = getBillCounter();
+        $('billIdInput').value = counter;
+        $('billIdPrint').textContent = formatBillId(counter);
+
+        addNewItem();
+        document.getElementById('addItemBtn').addEventListener('click', () => addNewItem());
+        document.getElementById('resetBtn').addEventListener('click', () => {
+          if (confirm('Clear all fields except Bill ID?')) resetForm();
+        });
+
+        document.getElementById('printBtn').addEventListener('click', () => {
+          const next = incrementBillCounter();
+          $('billIdInput').value = next;
+          $('billIdPrint').textContent = formatBillId(next);
+          setTimeout(() => window.print(), 50);
+        });
+
+        $('billIdInput').addEventListener('change', () => {
+          const raw = $('billIdInput').value;
+          const n = parseInt(raw, 10);
+          if (!isFinite(n) || n < 1){
+            alert('Please enter a valid positive number for Bill ID.');
+            const current = getBillCounter();
+            $('billIdInput').value = current;
+            $('billIdPrint').textContent = formatBillId(current);
+            return;
+          }
+          setBillCounter(n);
+          $('billIdInput').value = n;
+          $('billIdPrint').textContent = formatBillId(n);
+          alert('Bill number updated. Next print will continue from this value.');
+        });
+
+        window.addEventListener('storage', (e) => {
+          if (e.key === 'shawom_bill_counter') {
+            const v = getBillCounter();
+            $('billIdInput').value = v;
+            $('billIdPrint').textContent = formatBillId(v);
+          }
+        });
+
+        document.querySelector('#itemsBody').addEventListener('input', updateAll);
+      });
+    })();
+  </script>
+</body>
+</html>
